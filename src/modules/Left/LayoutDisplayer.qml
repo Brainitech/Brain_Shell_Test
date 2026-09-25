@@ -24,8 +24,10 @@ import "../../"
 Item {
     id: root
 
-    implicitWidth:  26
-    implicitHeight: 26
+    property real localScale: 1.0
+
+    implicitWidth:  Math.round(26 * localScale)
+    implicitHeight: Math.round(26 * localScale)
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -84,8 +86,6 @@ Item {
 
         // Quickshell emits (name, data) for raw events
         function onRawEvent(event) {
-			// console.log("RawEvent_name: "+ event.name)
-			// console.log("RawEvent_data: "+ event.data)
             refresh()  // Refresh on every event; the proc will ignore if still running
         }
     }
@@ -130,11 +130,11 @@ Item {
     Rectangle {
         id: bg
         anchors.fill: parent
-        radius: 6
-        color: mouseArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+        radius: Math.round(6 * localScale)
+        color: mouseArea.containsMouse ? Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.08) : "transparent"
 
         Behavior on color {
-            ColorAnimation { duration: 120 }
+            ColorAnimation { duration: Anim.color}
         }
 
         MouseArea {
@@ -157,7 +157,7 @@ Item {
             anchors.centerIn: parent
             text: root.currentLayout !== "" ? layoutSymbol(root.currentLayout) : "…"
             font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 14
+            font.pixelSize: Math.round(14 * localScale)
             color: "#cdd6f4"
 
             // Brief scale-pop on symbol change
@@ -165,13 +165,13 @@ Item {
                 SequentialAnimation {
                     NumberAnimation {
                         target: icon; property: "scale"
-                        to: 0.6; duration: 80
-                        easing.type: Easing.InQuad
+                        to: 0.6; duration: Anim.superFast
+                        easing.type: Anim.inQuad
                     }
                     NumberAnimation {
                         target: icon; property: "scale"
-                        to: 1.0; duration: 120
-                        easing.type: Easing.OutBack
+                        to: 1.0; duration: Anim.color
+                        easing.type: Anim.outBack
                     }
                 }
             }

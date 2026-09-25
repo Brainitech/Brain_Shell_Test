@@ -17,16 +17,20 @@ import "../../"
 //   string currentMode  — "integrated" | "hybrid" | "nvidia"
 //   bool   busy         — true while a switch command is running
 //   function switchMode(mode)
-//   function executeSwitch(mode)  — called by ConfirmDialog
 
 QtObject {
     id: root
 
     property string currentMode: "integrated"
-    property bool   busy:        false
+    property bool available: false
+
+    property var _checkProc: Process {
+        command: ["sh", "-c", "command -v envycontrol"]
+        running: true
+        onExited: (code) => { root.available = (code === 0) }
+    }
 
     // Pending mode — held until we confirm the switch succeeded
-    property string _pendingMode: ""
 
     // ── Query current mode ────────────────────────────────────────────────────
     property var _queryProc: Process {
@@ -35,7 +39,11 @@ QtObject {
         stdout: StdioCollector {
             onStreamFinished: {
                 var mode = text.trim().toLowerCase()
-                if (mode !== "") root.currentMode = mode
+                if (mode === "integrated" || mode === "hybrid" || mode === "nvidia") {
+                    root.currentMode = mode
+                } else {
+                    root.currentMode = "integrated"
+                }
             }
         }
     }

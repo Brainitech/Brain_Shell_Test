@@ -1,5 +1,5 @@
   <h1 align=center>Brain_Shell</h1>
-  
+
   <h3 align="center">
   A dynamic, highly modular Wayland desktop shell built with Quickshell and QML, tailored for Hyprland.
   </h3>
@@ -8,7 +8,7 @@
 <p align="center">
   <img src="https://img.shields.io/github/last-commit/Brainitech/Brain_Shell?style=for-the-badge&color=8D748C&logoColor=D9E0EE&labelColor=252733" alt="Last Commit" />
   <img src="https://img.shields.io/github/stars/Brainitech/Brain_Shell?style=for-the-badge&logo=starship&color=AB6C6A&logoColor=D9E0EE&labelColor=252733" alt="Stars" />
-  <img src="https://img.shields.io/badge/version-0.1.0-8D748C?style=for-the-badge&logoColor=D9E0EE&labelColor=252733" alt="Version 0.1.0" />
+  <img src="https://img.shields.io/badge/version-0.2.0-8D748C?style=for-the-badge&logoColor=D9E0EE&labelColor=252733" alt="Version 0.2.0" />
   <br>
   <img src="https://img.shields.io/badge/hyprland-v0.55+-5E81AC?style=for-the-badge&logoColor=D9E0EE&labelColor=252733" alt="Hyprland v0.55+" />
   <img src="https://img.shields.io/badge/framework-quickshell-A1C999?style=for-the-badge&logoColor=D9E0EE&labelColor=252733" alt="Quickshell Framework" />
@@ -51,28 +51,88 @@
 - **Clipboard Manager** — Cliphist integration for history management
 - **Highly Customizable** — QML-based UI, easily extended
 
-> **Note:** Brain Shell is currently in its `v0.1.0` release. While the core architecture and theming pipeline are feature-complete, you may encounter bugs. Please report them on our [Discord](https://discord.gg/BV8UduvABx) or via GitHub Issues!
+> **Note:** Brain Shell is currently in its `v0.2.0` release. While the core architecture and theming pipeline are feature-complete, you may encounter bugs. Please report them on our [Discord](https://discord.gg/BV8UduvABx) or via GitHub Issues!
 
 ---
 
-<h2>
+<h2 align="center">
   Installation
 </h2>
 
 ### One line installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Brainitech/Brain_Shell/refs/heads/main/install.sh | bash
+bash <(curl -s https://raw.githubusercontent.com/Brainitech/Brain_Shell/dev/install.sh)
 ```
+
+---
+
+### NixOS
+
+### 1. Create or edit `/etc/nixos/flake.nix`
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    brain-shell = {
+      url = "github:Brainitech/Brain_Shell?ref=dev";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { nixpkgs, brain-shell, ... }: {
+    # Replace "hostname" with whatever your actual hostname is
+    nixosConfigurations.hostname = nixpkgs.lib.nixosSystem {
+      modules = [
+        brain-shell.nixosModules.default
+        ./configuration.nix
+      ];
+    };
+  };
+}
+
+```
+
+### 2. Enable it in `/etc/nixos/configuration.nix`
+
+```nix
+programs.brain-shell.enable = true;
+
+# Note: If this is a fresh install, ensure flakes are enabled:
+nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+```
+
+### 3. Rebuild the system
+
+Run the rebuild command targeting the flake.
+
+```bash
+sudo nixos-rebuild switch --flake /etc/nixos/ (or path to flake)
+
+```
+
+### 4. Run the user installer
+
+Once the system rebuild is finished, run the setup script to initialize your local ~/.config files and Hyprland autostarts.
+
+```bash
+bash <(curl -s https://raw.githubusercontent.com/Brainitech/Brain_Shell/dev/install.sh)
+```
+
+---
 
 ### Manual installation
 
 ```bash
-git clone https://github.com/Brainitech/Brain_Shell.git
+git clone -b feat/v0.2.0-installer https://github.com/Brainitech/Brain_Shell.git
 cd Brain_Shell
 chmod +x install.sh
 ./install.sh
 ```
+
+Restart Hyprland, and that's the complete end-to-end user experience.
 
 The installer automatically:
 
@@ -160,7 +220,6 @@ The installer automatically:
 - **hyprlock** – Lock screen
 - **hypridle** – Idle management daemon
 - **hyprsunset** – Blue light filter
-- **hyprshutdown** – Graceful shutdown
 - **xdg-desktop-portal-hyprland** – Portal backend
 
 </details>
@@ -175,11 +234,11 @@ The installer automatically:
 
 ---
 
-<h2>
+<h2 align="center">
   Roadmap
 </h2>
 
-### Current (v0.1.0)
+### Current (v0.2.0)
 
 - [x] Core shell framework
 - [x] System monitoring dashboard
@@ -192,15 +251,15 @@ The installer automatically:
 - [x] Lua config generation
 - [x] Professional installer (Arch/NixOS)
 - [x] Auto-update mechanism
+- [x] Scaling on Different Screen-Sizes
+- [x] Config Pages for Shell Customization
+- [x] Additional theme options
+- [x] App launcher enhancements (pinned/recent)
+- [x] Unified popup configuration layer
 
-### Upcoming (Post-v0.1.0)
+### Upcoming (Post-v0.2.0)
 
-- [ ] Scaling on Different Screen-Sizes
-- [ ] Config Pages for Shell Customization
 - [ ] Multi-Monitor Support
-- [ ] Additional theme options
-- [ ] App launcher enhancements (pinned/recent)
-- [ ] Unified popup configuration layer
 - [ ] Extended documentation
 - [ ] Community themes
 - [ ] CLI
@@ -208,22 +267,13 @@ The installer automatically:
 
 ---
 
-<h2>
+<h2 align="center">
 Known Issues
 </h2>
 
-- **Multi-Monitor Scaling:** Global scaling across mixed-resolution monitors (e.g., 4K paired with 1080p) is currently inconsistent. UI elements may appear misproportioned or poorly sized on non-1080p screens.
-
-- **Top Bar Clipping:** Elements within the right notch may become visually clipped if the system tray is expanded and contains an excessive number of active items.
-
-- **Shutdown Menu (Hyprshutdown) State:** Canceling a shutdown or logout action can sometimes leave the Hyprland session in an empty state with most applications unintentionally closed. It may also occasionally struggle to terminate all running apps smoothly.
-
-> [!WARNING]  
-> **NixOS & Flakes Support:** The current NixOS installation pipeline and Flake implementation are highly experimental and currently known to be broken. This is actively under testing and will be properly addressed in an upcoming patch. If you are on NixOS, manual configuration is currently required.
-
 ---
 
-<h2>
+<h2 align="center">
   Contributing
 </h2>
 
@@ -236,7 +286,7 @@ Brain Shell is actively developed and welcomes contributions!
 
 ---
 
-<h2>
+<h2 align="center">
   Special Thanks
 </h2>
 
@@ -250,7 +300,7 @@ Brain Shell is actively developed and welcomes contributions!
 
 ---
 
-<h2>
+<h2 align="center">
   Brain Cells Collected
 </h2>
 
@@ -266,7 +316,7 @@ Brain Shell is actively developed and welcomes contributions!
 
 ---
 
-<h2>
+<h2 align="center">
   License
 </h2>
 

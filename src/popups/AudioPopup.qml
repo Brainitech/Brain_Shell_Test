@@ -1,111 +1,59 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
-import "../shapes"
 import "../components"
 import "../services"
 import "../"
 
-PopupWindow {
-	id: root
+Item {
+    id: root
 
-	required property var anchorWindow
+    property real localScale: 1.0
 
-	readonly property int fw: Theme.cornerRadius
-	readonly property int fh: Theme.cornerRadius
+    readonly property int popupHeight: Math.round(340 * root.localScale)
+    readonly property int maxWidth: Math.round(300 * root.localScale)
 
-	readonly property var pageWidths: ({
-		"output": 200,
-		"input":  200,
-		"mixer":  300
-	})
+    readonly property var pageWidths: ({
+        "output": Math.round(200 * root.localScale),
+        "input":  Math.round(200 * root.localScale),
+        "mixer":  Math.round(300 * root.localScale)
+    })
+    
+    // Animate target width slightly for tab changes
+    property real targetWidth: (pageWidths[Popups.audioPage] ?? maxWidth)
 
-	readonly property int popupHeight: 340
+    readonly property int popupWidth: targetWidth
 
-	readonly property int maxWidth: 300
+    onOpacityChanged: if (opacity === 1) forceActiveFocus()
+    Keys.onEscapePressed: SurfaceState.close()
 
-	color:   "transparent"
-	visible: slide.windowVisible
-	mask: Region { item: maskProxy }
+    MouseArea {
+        anchors.fill: parent
+        onClicked: Popups.audioPinned = true
+    }
 
-	anchor.window:  anchorWindow
-	anchor.rect: Qt.rect(
-		Theme.cornerRadius,
-		anchorWindow.height / 2,
-		0,
-		popupHeight
-	)
-	anchor.gravity: Edges.Left
-	
-	Item {
-	    id:      maskProxy
-	    x:       root.maxWidth - sizer.width
-	    y:       ((root.popupHeight - sizer.height) / 2) -root.fh
-	    width:   sizer.width
-	    height:  sizer.height
-	}
+    Item {
+        id: slide
+        anchors.fill: parent
+        clip: true
 
-	implicitWidth:  maxWidth
-	implicitHeight: popupHeight
-	
-	PopupSlide {
-		id: slide
-		anchors.fill: parent
-		edge:             "right"
-		open:             Popups.audioOpen
-		hoverEnabled:     false
-		triggerHovered:   Popups.audioTriggerHovered
-		onCloseRequested: Popups.audioOpen = false
-
-		Connections {
-			target: Popups
-			function onAudioOpenChanged() {
-				if (!Popups.audioOpen) audioResetTimer.restart()
-                else audioControl.page = Popups.audioPage
-			}
-
-            function onAudioPageChanged() {
-                audioControl.page = Popups.audioPage
+        onOpacityChanged: {
+            if (opacity === 1 && !(SurfaceState.activeContent === "audio")) {
+                let opt = PrefsService.defaultAudioTab
+                if (opt === "Input") Popups.audioPage = "input"
+                else if (opt === "Mixers") Popups.audioPage = "mixer"
+                else Popups.audioPage = "output"
             }
-		}
+        }
 
-		Timer {
-			id: audioResetTimer
-			interval: Theme.animDuration + 20
-			onTriggered: audioControl.reset()
-		}
+        AudioControl {
+            id: audioControl
+            localScale: root.localScale
+            fullyOpen: (SurfaceState.activeContent === "audio") && root.opacity === 1
 
-		Item {
-			id: sizer
-			anchors.right:          parent.right
-			anchors.verticalCenter: parent.verticalCenter
-			clip: true
-
-			width:  (root.pageWidths[audioControl.page] ?? root.maxWidth)
-			height: root.popupHeight
-
-			Behavior on width { NumberAnimation { duration: Theme.animDuration; easing.type: Easing.InOutCubic } }
-
-			PopupShape {
-				id: bg
-				anchors.fill: parent
-				attachedEdge: "right"
-				color:        Theme.background
-				radius:       Theme.cornerRadius
-				flareWidth:   root.fw
-				flareHeight:  root.fh
-			}
-
-			AudioControl {
-				id: audioControl
-				anchors {
-					fill:         parent
-					topMargin:    root.fh + 6
-					bottomMargin: root.fh + 6
-					leftMargin:   10
-					rightMargin:  root.fw - 4
-				}
-			}
-		}
-	}
+            width: root.targetWidth - Math.round(16 * root.localScale)
+            height: root.popupHeight - Math.round(16 * root.localScale)
+            
+            anchors.centerIn: parent
+        }
+    }
 }
